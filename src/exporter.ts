@@ -27,9 +27,16 @@ function createMarked(): Marked {
   return md;
 }
 
+function preserveBlankLines(text: string): string {
+  return text.replace(/\n{3,}/g, (match) => {
+    const spacers = match.length - 2;
+    return '\n\n' + Array(spacers).fill('&nbsp;').join('\n\n') + '\n\n';
+  });
+}
+
 function renderMd(md: Marked, text: string): string {
   if (!text) return '';
-  const r = md.parse(text);
+  const r = md.parse(preserveBlankLines(text));
   return typeof r === 'string' ? r : '';
 }
 

@@ -159,6 +159,8 @@ Mark Slide Down의 슬라이드 데이터 포맷 상세 명세입니다.
 
 `title`과 `content`는 슬라이드의 기본 영역에 표시되며, 레이아웃 스타일(padding, align 등)에 따라 배치됩니다. Markdown 문법을 사용할 수 있습니다.
 
+연속 빈 줄을 사용하여 여백을 추가할 수 있습니다. 일반 Markdown에서는 빈 줄이 몇 개든 하나의 문단 간격으로 축소되지만, Mark Slide Down에서는 빈 줄 수만큼 추가 여백이 생성됩니다.
+
 ---
 
 ## SlideElement

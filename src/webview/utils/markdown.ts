@@ -20,10 +20,23 @@ marked.use({
   },
 });
 
+/**
+ * Preserve consecutive blank lines as visible vertical spacing.
+ * Standard Markdown collapses any number of blank lines into a single
+ * paragraph break. This converts each extra blank line into an `&nbsp;`
+ * paragraph so the spacing is rendered.
+ */
+function preserveBlankLines(text: string): string {
+  return text.replace(/\n{3,}/g, (match) => {
+    const spacers = match.length - 2;
+    return '\n\n' + Array(spacers).fill('&nbsp;').join('\n\n') + '\n\n';
+  });
+}
+
 export function renderMarkdown(text: string): string {
   if (!text) return '';
   try {
-    const result = marked.parse(text);
+    const result = marked.parse(preserveBlankLines(text));
     if (typeof result === 'string') return result;
     return '';
   } catch {
