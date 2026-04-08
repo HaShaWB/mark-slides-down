@@ -116,7 +116,7 @@ vsce package --allow-missing-repository
 
 `mark-slide-down-x.x.x.vsix` 파일이 프로젝트 루트에 생성됩니다.
 
-`.vscodeignore` 파일이 `node_modules`, `src`, `samples` 등을 제외하여 번들 크기를 최소화합니다 (~1.5MB).
+`.vscodeignore` 파일이 `node_modules`, `src`, `samples` 등을 제외하여 번들 크기를 최소화합니다 (~1.5MB).d
 
 ### 버전 업데이트
 

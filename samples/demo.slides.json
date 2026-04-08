@@ -4,8 +4,8 @@
     "author": "Developer",
     "date": "2026-04-07",
     "theme": "default",
-    "width": 1280,
-    "height": 720,
+    "width": 1920,
+    "height": 1080,
     "style": {
       "fontFamily": "'Segoe UI', 'Noto Sans KR', sans-serif",
       "codeFontFamily": "'Consolas', 'D2Coding', monospace",
@@ -49,7 +49,7 @@
     {
       "type": "body",
       "title": "프로젝트 소개",
-      "content": "## 핵심 기능\n\n- **빠른 제작**: 마크다운으로 빠르게 슬라이드 제작\n- **LLM 친화적**: JSON 기반의 단순한 구조\n- **프로그래밍 특화**: 코드 하이라이팅 지원\n- **GUI 에디터**: Jupyter처럼 인터렉티브한 편집",
+      "content": "## 핵심 기능\n\n- **빠른 제작**: 마크다운으로 빠르게 슬라이드 제작\n- **LLM 친화적**: JSON 기반의 단순한 구조\n- **프로그래밍 특화**: 코드 하이라이팅 지원\n- **GUI 에디터**: Jupyter처럼 인터렉티브한 편집\n",
       "elements": []
     },
     {

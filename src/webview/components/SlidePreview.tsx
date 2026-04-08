@@ -1,7 +1,8 @@
-import React, { useRef, useEffect, useState } from 'react';
-import type { Slide, SlideElement, SlideDimensions, SlideStyle } from '../../types';
-import { renderMarkdown, highlightCode } from '../utils/markdown';
-import { MermaidDiagram } from './MermaidDiagram';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { Marked } from 'marked';
+import hljs from 'highlight.js/lib/common';
+import mermaid from 'mermaid';
+import type { Slide, SlideElement, SlideDimensions, SlideStyle, LayoutStyle } from '../../types';
 
 interface SlidePreviewProps {
   slide: Slide;
@@ -9,189 +10,219 @@ interface SlidePreviewProps {
   style: SlideStyle;
 }
 
-function pxToCqw(px: number, refWidth: number): string {
-  return `${(px / refWidth) * 100}cqw`;
+/* ------------------------------------------------------------------ */
+/*  Rendering helpers – identical to exporter.ts                      */
+/* ------------------------------------------------------------------ */
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-function pxToPct(px: number, refWidth: number): string {
-  return `${(px / refWidth) * 100}%`;
+const md: Marked = (() => {
+  const m = new Marked({ gfm: true, breaks: true });
+  m.use({
+    renderer: {
+      code(code: string, infostring: string | undefined) {
+        const lang = infostring && hljs.getLanguage(infostring) ? infostring : undefined;
+        const highlighted = lang
+          ? hljs.highlight(code, { language: lang }).value
+          : hljs.highlightAuto(code).value;
+        return `<pre><code class="hljs">${highlighted}</code></pre>`;
+      },
+    },
+  });
+  return m;
+})();
+
+function preserveBlankLines(text: string): string {
+  return text.replace(/\n{3,}/g, (match) => {
+    const spacers = match.length - 2;
+    return '\n\n' + Array(spacers).fill('&nbsp;').join('\n\n') + '\n\n';
+  });
 }
 
-const ALIGN_MAP: Record<string, string> = {
-  left: 'flex-start', center: 'center', right: 'flex-end',
-};
-const VALIGN_MAP: Record<string, string> = {
-  top: 'flex-start', center: 'center', bottom: 'flex-end',
-};
+function renderMd(text: string): string {
+  if (!text) return '';
+  const r = md.parse(preserveBlankLines(text));
+  return typeof r === 'string' ? r : '';
+}
+
+const ALIGN: Record<string, string> = { left: 'flex-start', center: 'center', right: 'flex-end' };
+const VALIGN: Record<string, string> = { top: 'flex-start', center: 'center', bottom: 'flex-end' };
+
+function renderElement(el: SlideElement, style: SlideStyle): string {
+  const userScale = el.scale ?? 1;
+  const css = `position:absolute;left:${el.pos[0]}px;top:${el.pos[1]}px;transform-origin:top left;transform:scale(${userScale});`;
+
+  let content: string;
+  switch (el.type) {
+    case 'code': {
+      const lang = el.meta?.language || '';
+      const highlighted = lang && hljs.getLanguage(lang)
+        ? hljs.highlight(el.data, { language: lang }).value
+        : hljs.highlightAuto(el.data).value;
+      content = `<pre class="code-block"><code class="hljs">${highlighted}</code></pre>`;
+      break;
+    }
+    case 'markdown':
+      content = renderMd(el.data);
+      break;
+    case 'table': {
+      const colWidths = el.meta?.colWidths?.split(',').map(Number).filter(n => !isNaN(n) && n > 0);
+      let html = renderMd(el.data);
+      if (colWidths && colWidths.length > 0) {
+        const colgroup = '<colgroup>' + colWidths.map(w => `<col style="width:${w}%">`).join('') + '</colgroup>';
+        html = html.replace(/<table>/, `<table>${colgroup}`);
+      }
+      content = html;
+      break;
+    }
+    case 'image':
+      content = `<img src="${escapeHtml(el.data)}" alt="${escapeHtml(el.meta?.alt || '')}" style="max-width:600px;height:auto;object-fit:contain;">`;
+      break;
+    case 'text':
+      content = `<div style="white-space:pre-wrap;">${escapeHtml(el.data)}</div>`;
+      break;
+    case 'diagram':
+      content = `<div class="mermaid-diagram" data-code="${escapeHtml(el.data)}"><pre style="color:#999;padding:1em;font-size:14px;">Loading diagram...</pre></div>`;
+      break;
+    default:
+      content = '';
+  }
+
+  return `<div class="element" style="${css}">${content}</div>`;
+}
+
+function buildSlideHtml(slide: Slide, style: SlideStyle, dims: SlideDimensions): string {
+  const layout: LayoutStyle = slide.type === 'cover' ? style.cover : style.body;
+
+  const slideStyle = [
+    `width:${dims.width}px`, `height:${dims.height}px`,
+    `background-color:${style.backgroundColor}`, `color:${style.color}`,
+    `font-family:${style.fontFamily}`, `line-height:${style.lineHeight}`,
+    `padding:${layout.paddingTop}px ${layout.paddingRight}px ${layout.paddingBottom}px ${layout.paddingLeft}px`,
+    `display:flex`, `flex-direction:column`,
+    `align-items:${ALIGN[layout.align] || 'flex-start'}`,
+    `justify-content:${VALIGN[layout.verticalAlign] || 'flex-start'}`,
+    `text-align:${layout.align}`,
+    `position:relative`, `overflow:hidden`,
+  ].join(';');
+
+  const titleStyle = [
+    `font-size:${layout.titleSize}px`, `font-weight:700`, `margin-bottom:0.5em`,
+    ...(slide.type === 'body' && style.bodySeparatorShow !== false
+      ? [`border-bottom:2px solid ${style.bodySeparatorColor || '#007acc'}`, `padding-bottom:0.3em`, `width:100%`]
+      : slide.type === 'body' ? [`width:100%`] : []),
+  ].join(';');
+
+  const contentStyle = `font-size:${layout.contentSize}px;line-height:${style.lineHeight};width:100%;`;
+
+  const titleHtml = renderMd(slide.title);
+  const contentHtml = slide.content ? renderMd(slide.content) : '';
+  const elementsHtml = slide.elements.map(el => renderElement(el, style)).join('\n');
+
+  return `<section class="slide ${slide.type}" style="${slideStyle}">
+    <div class="slide-title" style="${titleStyle}">${titleHtml}</div>
+    ${contentHtml ? `<div class="slide-content" style="${contentStyle}">${contentHtml}</div>` : ''}
+    ${elementsHtml}
+  </section>`;
+}
+
+function getSlideCss(style: SlideStyle): string {
+  return `
+.slide{box-sizing:border-box;}
+.slide *{box-sizing:border-box;margin:0;padding:0;}
+.slide h1{font-size:${style.h1Size}px;margin:0.3em 0;}
+.slide h2{font-size:${style.h2Size}px;margin:0.3em 0;}
+.slide h3{font-size:${style.h3Size}px;margin:0.3em 0;}
+.slide h4{font-size:${style.h4Size}px;margin:0.3em 0;}
+.slide-title h1,.slide-title h2,.slide-title h3,.slide-title h4{font-size:inherit;margin:0;}
+.slide ul,.slide ol{padding-left:1.5em;margin:0.4em 0;}
+.slide li{margin:0.2em 0;}
+.slide p{margin:0.3em 0;}
+.slide a{color:#007acc;text-decoration:none;}
+.slide strong{font-weight:700;}
+.slide code{background:rgba(128,128,128,0.15);padding:1px 5px;border-radius:3px;font-family:${style.codeFontFamily};font-size:0.9em;}
+.slide pre{background:#0d1117;border-radius:5px;padding:0.8em;overflow-x:auto;margin:0.6em 0;}
+.slide pre code{background:transparent;padding:0;font-size:${style.codeFontSize}px;font-family:${style.codeFontFamily};}
+.slide blockquote{border-left:3px solid #007acc;margin:0.5em 0;padding:0.3em 0.8em;color:#888;background:rgba(128,128,128,0.1);}
+.slide table{border-collapse:collapse;width:100%;margin:0.5em 0;}
+.slide th,.slide td{border:1px solid rgba(128,128,128,0.3);padding:0.4em 0.8em;text-align:left;}
+.slide th{background:rgba(128,128,128,0.1);font-weight:600;}
+.slide tr:nth-child(even){background:rgba(128,128,128,0.05);}
+.element{font-family:${style.fontFamily};line-height:${style.lineHeight};}
+.code-block{background:#0d1117;border-radius:5px;padding:0.8em;font-family:${style.codeFontFamily};font-size:${style.codeFontSize}px;overflow:auto;margin:0;}
+.code-block code{background:transparent;padding:0;font-size:inherit;}
+.mermaid-diagram svg{max-width:100%;height:auto;}`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Mermaid helper                                                    */
+/* ------------------------------------------------------------------ */
+
+let mermaidReady = false;
+let mermaidId = 0;
+
+function ensureMermaidInit() {
+  if (mermaidReady) return;
+  mermaidReady = true;
+  mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                         */
+/* ------------------------------------------------------------------ */
 
 export const SlidePreview: React.FC<SlidePreviewProps> = ({ slide, dims, style }) => {
-  const aspectRatio = `${dims.width} / ${dims.height}`;
-  const layout = slide.type === 'cover' ? style.cover : style.body;
-
-  const canvasStyle = {
-    aspectRatio,
-    containerType: 'inline-size',
-    fontFamily: style.fontFamily,
-    color: style.color,
-    backgroundColor: style.backgroundColor,
-    lineHeight: style.lineHeight,
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: ALIGN_MAP[layout.align] || 'flex-start',
-    justifyContent: VALIGN_MAP[layout.verticalAlign] || 'flex-start',
-    textAlign: layout.align as any,
-    padding: [
-      pxToPct(layout.paddingTop, dims.width),
-      pxToPct(layout.paddingRight, dims.width),
-      pxToPct(layout.paddingBottom, dims.width),
-      pxToPct(layout.paddingLeft, dims.width),
-    ].join(' '),
-    '--h1-size': pxToCqw(style.h1Size, dims.width),
-    '--h2-size': pxToCqw(style.h2Size, dims.width),
-    '--h3-size': pxToCqw(style.h3Size, dims.width),
-    '--h4-size': pxToCqw(style.h4Size, dims.width),
-    '--code-font': style.codeFontFamily,
-    '--code-size': pxToCqw(style.codeFontSize, dims.width),
-    '--content-size': pxToCqw(layout.contentSize, dims.width),
-  } as React.CSSProperties;
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: pxToCqw(layout.titleSize, dims.width),
-    fontWeight: 700,
-    marginBottom: '0.5em',
-    width: slide.type === 'body' ? '100%' : (layout.align !== 'center' ? '100%' : undefined),
-    ...(slide.type === 'body' && style.bodySeparatorShow !== false ? {
-      borderBottom: `2px solid ${style.bodySeparatorColor || '#007acc'}`,
-      paddingBottom: '0.3em',
-    } : {}),
-  };
-
-  const contentStyle: React.CSSProperties = {
-    fontSize: pxToCqw(layout.contentSize, dims.width),
-    lineHeight: style.lineHeight,
-    width: '100%',
-  };
-
-  return (
-    <div className={`slide-preview ${slide.type}`}>
-      <div className="slide-canvas" style={canvasStyle}>
-        <div
-          className="slide-title-rendered"
-          style={titleStyle}
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(slide.title) }}
-        />
-        {slide.content && (
-          <div
-            className="slide-content-rendered"
-            style={contentStyle}
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(slide.content) }}
-          />
-        )}
-        {slide.elements.map((element, idx) => (
-          <ElementPreview key={idx} element={element} dims={dims} style={style} />
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const ElementPreview: React.FC<{ element: SlideElement; dims: SlideDimensions; style: SlideStyle }> = ({
-  element, dims, style,
-}) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [canvasScale, setCanvasScale] = useState(1);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const canvas = container.closest('.slide-canvas') as HTMLElement | null;
-    if (!canvas) return;
-    const observer = new ResizeObserver(() => {
-      setCanvasScale(canvas.clientWidth / dims.width);
-    });
-    observer.observe(canvas);
+    const el = wrapperRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setScale(el.clientWidth / dims.width));
+    observer.observe(el);
     return () => observer.disconnect();
   }, [dims.width]);
 
-  const userScale = element.scale ?? 1;
-  const effectiveScale = canvasScale * userScale;
+  const slideHtml = useMemo(
+    () => buildSlideHtml(slide, style, dims),
+    [slide, style, dims],
+  );
 
-  const xPct = (element.pos[0] / dims.width) * 100;
-  const yPct = (element.pos[1] / dims.height) * 100;
+  const slideCss = useMemo(() => getSlideCss(style), [style]);
 
-  const containerStyle: React.CSSProperties = {
-    left: `${xPct}%`,
-    top: `${yPct}%`,
-    transformOrigin: 'top left',
-    transform: `scale(${effectiveScale})`,
-  };
-
-  const innerStyle: React.CSSProperties = {
-    fontFamily: style.fontFamily,
-    lineHeight: style.lineHeight,
-  };
-
-  const colWidths = element.meta?.colWidths
-    ?.split(',')
-    .map(Number)
-    .filter((n) => !isNaN(n) && n > 0);
-
-  const renderContent = () => {
-    switch (element.type) {
-      case 'image':
-        return (
-          <img
-            src={element.data}
-            alt={element.meta?.alt || ''}
-            style={{ maxWidth: 600, height: 'auto', objectFit: 'contain' }}
-          />
-        );
-
-      case 'code': {
-        const lang = element.meta?.language || '';
-        const highlighted = highlightCode(element.data, lang || undefined);
-        return (
-          <pre className="element-code-block" style={{
-            fontFamily: style.codeFontFamily,
-            fontSize: style.codeFontSize,
-          }}>
-            <div className="code-lang-label">{lang}</div>
-            <code className="hljs" dangerouslySetInnerHTML={{ __html: highlighted }} />
-          </pre>
-        );
-      }
-
-      case 'table': {
-        const html = renderMarkdown(element.data);
-        if (colWidths && colWidths.length > 0) {
-          const colgroup = '<colgroup>' +
-            colWidths.map((w) => `<col style="width:${w}%">`).join('') +
-            '</colgroup>';
-          const withWidths = html.replace(/<table>/, `<table>${colgroup}`);
-          return <div dangerouslySetInnerHTML={{ __html: withWidths }} />;
-        }
-        return <div dangerouslySetInnerHTML={{ __html: html }} />;
-      }
-
-      case 'markdown':
-        return (
-          <div dangerouslySetInnerHTML={{ __html: renderMarkdown(element.data) }} />
-        );
-
-      case 'diagram':
-        return <MermaidDiagram code={element.data} />;
-
-      case 'text':
-      default:
-        return <div className="element-text">{element.data}</div>;
-    }
-  };
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const diagrams = el.querySelectorAll<HTMLElement>('.mermaid-diagram[data-code]');
+    if (diagrams.length === 0) return;
+    ensureMermaidInit();
+    diagrams.forEach((node) => {
+      const code = node.getAttribute('data-code');
+      if (!code) return;
+      const id = `mmd-pv-${++mermaidId}`;
+      mermaid.render(id, code)
+        .then(({ svg }) => { node.innerHTML = svg; })
+        .catch((err: any) => {
+          node.innerHTML = `<pre style="color:#f88;font-size:14px;">${
+            typeof err === 'string' ? err : err?.message || 'Error'
+          }</pre>`;
+        });
+    });
+  }, [slideHtml]);
 
   return (
-    <div ref={containerRef} className={`slide-element element-${element.type}`} style={containerStyle}>
-      <div className="element-scale-wrapper" style={innerStyle}>
-        {renderContent()}
-      </div>
+    <div
+      className="slide-preview"
+      ref={wrapperRef}
+      style={{ height: dims.height * scale }}
+    >
+      <style>{slideCss}</style>
+      <div
+        style={{ transformOrigin: 'top left', transform: `scale(${scale})` }}
+        dangerouslySetInnerHTML={{ __html: slideHtml }}
+      />
     </div>
   );
 };

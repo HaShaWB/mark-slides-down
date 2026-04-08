@@ -2,7 +2,7 @@
   "name": "mark-slide-down",
   "displayName": "Mark Slide Down",
   "description": "Markdown based Slide VS Code Extension - 프로그래밍 강의에 특화된 슬라이드 도구",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT",
   "publisher": "mark-slide-down",
   "repository": {
