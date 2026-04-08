@@ -1,0 +1,98 @@
+{
+  "name": "mark-slide-down",
+  "displayName": "Mark Slide Down",
+  "description": "Markdown based Slide VS Code Extension - 프로그래밍 강의에 특화된 슬라이드 도구",
+  "version": "0.0.1",
+  "license": "MIT",
+  "publisher": "mark-slide-down",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hashawb/mark-slide-down"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "markSlideDown.slideEditor",
+        "displayName": "Slide Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.slides.json"
+          },
+          {
+            "filenamePattern": "*.mslides"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "commands": [
+      {
+        "command": "markSlideDown.newSlideFile",
+        "title": "Mark Slide Down: New Slide File"
+      },
+      {
+        "command": "markSlideDown.importMarkdown",
+        "title": "Mark Slide Down: Import Markdown to Slides"
+      },
+      {
+        "command": "markSlideDown.exportPdf",
+        "title": "Mark Slide Down: Export to PDF"
+      },
+      {
+        "command": "markSlideDown.preview",
+        "title": "Mark Slide Down: Preview Slideshow"
+      }
+    ],
+    "languages": [
+      {
+        "id": "slides-json",
+        "extensions": [
+          ".slides.json",
+          ".mslides"
+        ],
+        "aliases": [
+          "Slides JSON",
+          "Mark Slides"
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "npm run build:extension && npm run build:webview",
+    "build:extension": "webpack --mode production --config webpack.extension.js",
+    "build:webview": "webpack --mode production --config webpack.webview.js",
+    "dev": "concurrently \"npm run dev:extension\" \"npm run dev:webview\"",
+    "dev:extension": "webpack --mode development --watch --config webpack.extension.js",
+    "dev:webview": "webpack --mode development --watch --config webpack.webview.js",
+    "lint": "eslint src --ext ts,tsx"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "@types/vscode": "^1.85.0",
+    "concurrently": "^8.2.2",
+    "css-loader": "^6.9.1",
+    "style-loader": "^3.3.4",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "highlight.js": "^11.11.1",
+    "marked": "^11.1.1",
+    "mermaid": "^11.14.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
