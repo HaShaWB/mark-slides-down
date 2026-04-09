@@ -27,10 +27,14 @@ marked.use({
  * paragraph so the spacing is rendered.
  */
 function preserveBlankLines(text: string): string {
-  return text.replace(/\n{3,}/g, (match) => {
-    const spacers = match.length - 2;
-    return '\n\n' + Array(spacers).fill('&nbsp;').join('\n\n') + '\n\n';
-  });
+  const parts = text.split(/(```[\s\S]*?```)/g);
+  return parts.map((part, i) => {
+    if (i % 2 === 1) return part;
+    return part.replace(/\n{3,}/g, (match) => {
+      const spacers = match.length - 2;
+      return '\n\n' + Array(spacers).fill('&nbsp;').join('\n\n') + '\n\n';
+    });
+  }).join('');
 }
 
 export function renderMarkdown(text: string): string {

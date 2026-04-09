@@ -28,10 +28,14 @@ function createMarked(): Marked {
 }
 
 function preserveBlankLines(text: string): string {
-  return text.replace(/\n{3,}/g, (match) => {
-    const spacers = match.length - 2;
-    return '\n\n' + Array(spacers).fill('&nbsp;').join('\n\n') + '\n\n';
-  });
+  const parts = text.split(/(```[\s\S]*?```)/g);
+  return parts.map((part, i) => {
+    if (i % 2 === 1) return part;
+    return part.replace(/\n{3,}/g, (match) => {
+      const spacers = match.length - 2;
+      return '\n\n' + Array(spacers).fill('&nbsp;').join('\n\n') + '\n\n';
+    });
+  }).join('');
 }
 
 function renderMd(md: Marked, text: string): string {
@@ -99,7 +103,7 @@ function renderSlide(
   const slideStyle = [
     `width:${dims.width}px`, `height:${dims.height}px`,
     `background-color:${style.backgroundColor}`, `color:${style.color}`,
-    `font-family:${style.fontFamily}`, `line-height:${style.lineHeight}`,
+    `font-family:${style.fontFamily}`, `font-size:16px`, `line-height:${style.lineHeight}`,
     `padding:${layout.paddingTop}px ${layout.paddingRight}px ${layout.paddingBottom}px ${layout.paddingLeft}px`,
     `display:flex`, `flex-direction:column`,
     `align-items:${ALIGN[layout.align] || 'flex-start'}`,
@@ -156,9 +160,9 @@ body{min-height:100vh;}
 .slide p{margin:0.3em 0;}
 .slide a{color:#007acc;text-decoration:none;}
 .slide strong{font-weight:700;}
-.slide code{background:rgba(128,128,128,0.15);padding:1px 5px;border-radius:3px;font-family:${style.codeFontFamily};font-size:0.9em;}
+.slide code,.slide code.hljs{background:rgba(128,128,128,0.15);padding:1px 5px;border-radius:3px;font-family:${style.codeFontFamily};font-size:0.9em;}
 .slide pre{background:#0d1117;border-radius:5px;padding:0.8em;overflow-x:auto;margin:0.6em 0;}
-.slide pre code{background:transparent;padding:0;font-size:${style.codeFontSize}px;font-family:${style.codeFontFamily};}
+.slide pre code,.slide pre code.hljs{background:transparent;padding:0;font-size:${style.codeFontSize}px;font-family:${style.codeFontFamily};}
 .slide blockquote{border-left:3px solid #007acc;margin:0.5em 0;padding:0.3em 0.8em;color:#888;background:rgba(128,128,128,0.1);}
 .slide table{border-collapse:collapse;width:100%;margin:0.5em 0;}
 .slide th,.slide td{border:1px solid rgba(128,128,128,0.3);padding:0.4em 0.8em;text-align:left;}

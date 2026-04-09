@@ -35,10 +35,14 @@ const md: Marked = (() => {
 })();
 
 function preserveBlankLines(text: string): string {
-  return text.replace(/\n{3,}/g, (match) => {
-    const spacers = match.length - 2;
-    return '\n\n' + Array(spacers).fill('&nbsp;').join('\n\n') + '\n\n';
-  });
+  const parts = text.split(/(```[\s\S]*?```)/g);
+  return parts.map((part, i) => {
+    if (i % 2 === 1) return part;
+    return part.replace(/\n{3,}/g, (match) => {
+      const spacers = match.length - 2;
+      return '\n\n' + Array(spacers).fill('&nbsp;').join('\n\n') + '\n\n';
+    });
+  }).join('');
 }
 
 function renderMd(text: string): string {
@@ -99,7 +103,7 @@ function buildSlideHtml(slide: Slide, style: SlideStyle, dims: SlideDimensions):
   const slideStyle = [
     `width:${dims.width}px`, `height:${dims.height}px`,
     `background-color:${style.backgroundColor}`, `color:${style.color}`,
-    `font-family:${style.fontFamily}`, `line-height:${style.lineHeight}`,
+    `font-family:${style.fontFamily}`, `font-size:16px`, `line-height:${style.lineHeight}`,
     `padding:${layout.paddingTop}px ${layout.paddingRight}px ${layout.paddingBottom}px ${layout.paddingLeft}px`,
     `display:flex`, `flex-direction:column`,
     `align-items:${ALIGN[layout.align] || 'flex-start'}`,
@@ -142,9 +146,9 @@ function getSlideCss(style: SlideStyle): string {
 .slide p{margin:0.3em 0;}
 .slide a{color:#007acc;text-decoration:none;}
 .slide strong{font-weight:700;}
-.slide code{background:rgba(128,128,128,0.15);padding:1px 5px;border-radius:3px;font-family:${style.codeFontFamily};font-size:0.9em;}
+.slide code,.slide code.hljs{background:rgba(128,128,128,0.15);padding:1px 5px;border-radius:3px;font-family:${style.codeFontFamily};font-size:0.9em;}
 .slide pre{background:#0d1117;border-radius:5px;padding:0.8em;overflow-x:auto;margin:0.6em 0;}
-.slide pre code{background:transparent;padding:0;font-size:${style.codeFontSize}px;font-family:${style.codeFontFamily};}
+.slide pre code,.slide pre code.hljs{background:transparent;padding:0;font-size:${style.codeFontSize}px;font-family:${style.codeFontFamily};}
 .slide blockquote{border-left:3px solid #007acc;margin:0.5em 0;padding:0.3em 0.8em;color:#888;background:rgba(128,128,128,0.1);}
 .slide table{border-collapse:collapse;width:100%;margin:0.5em 0;}
 .slide th,.slide td{border:1px solid rgba(128,128,128,0.3);padding:0.4em 0.8em;text-align:left;}
@@ -153,7 +157,24 @@ function getSlideCss(style: SlideStyle): string {
 .element{font-family:${style.fontFamily};line-height:${style.lineHeight};}
 .code-block{background:#0d1117;border-radius:5px;padding:0.8em;font-family:${style.codeFontFamily};font-size:${style.codeFontSize}px;overflow:auto;margin:0;}
 .code-block code{background:transparent;padding:0;font-size:inherit;}
-.mermaid-diagram svg{max-width:100%;height:auto;}`;
+.mermaid-diagram svg{max-width:100%;height:auto;}
+pre code.hljs{display:block;overflow-x:auto;padding:1em}
+code.hljs{padding:3px 5px}
+.hljs{color:#c9d1d9;background:#0d1117}
+.hljs-doctag,.hljs-keyword,.hljs-meta .hljs-keyword,.hljs-template-tag,.hljs-template-variable,.hljs-type,.hljs-variable.language_{color:#ff7b72}
+.hljs-title,.hljs-title.class_,.hljs-title.class_.inherited__,.hljs-title.function_{color:#d2a8ff}
+.hljs-attr,.hljs-attribute,.hljs-literal,.hljs-meta,.hljs-number,.hljs-operator,.hljs-variable,.hljs-selector-attr,.hljs-selector-class,.hljs-selector-id{color:#79c0ff}
+.hljs-regexp,.hljs-string,.hljs-meta .hljs-string{color:#a5d6ff}
+.hljs-built_in,.hljs-symbol{color:#ffa657}
+.hljs-comment,.hljs-code,.hljs-formula{color:#8b949e}
+.hljs-name,.hljs-quote,.hljs-selector-tag,.hljs-selector-pseudo{color:#7ee787}
+.hljs-subst{color:#c9d1d9}
+.hljs-section{color:#1f6feb;font-weight:bold}
+.hljs-bullet{color:#f2cc60}
+.hljs-emphasis{color:#c9d1d9;font-style:italic}
+.hljs-strong{color:#c9d1d9;font-weight:bold}
+.hljs-addition{color:#aff5b4;background-color:#033a16}
+.hljs-deletion{color:#ffdcd7;background-color:#67060c}`;
 }
 
 /* ------------------------------------------------------------------ */

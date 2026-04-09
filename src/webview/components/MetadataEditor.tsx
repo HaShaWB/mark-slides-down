@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { SlideMetadata } from '../../types';
 import { DIMENSION_PRESETS } from '../../types';
+import { THEME_PRESETS } from '../../themes';
 
 interface MetadataEditorProps {
   metadata: SlideMetadata;
@@ -51,11 +52,22 @@ export const MetadataEditor: React.FC<MetadataEditorProps> = ({ metadata, onChan
           </div>
           <div className="editor-field">
             <label>Theme</label>
-            <input
-              type="text"
-              value={metadata.theme}
-              onChange={(e) => onChange({ ...metadata, theme: e.target.value })}
-            />
+            <select
+              value={THEME_PRESETS.some(t => t.id === metadata.theme) ? metadata.theme : '__custom'}
+              onChange={(e) => {
+                const preset = THEME_PRESETS.find(t => t.id === e.target.value);
+                if (preset) {
+                  onChange({ ...metadata, theme: preset.id, style: { ...preset.style } });
+                }
+              }}
+            >
+              {THEME_PRESETS.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+              {!THEME_PRESETS.some(t => t.id === metadata.theme) && (
+                <option value="__custom" disabled>Custom</option>
+              )}
+            </select>
           </div>
 
           <div className="metadata-divider" />
