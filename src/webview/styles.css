@@ -417,6 +417,7 @@ body {
 .element-badge[data-type="table"] { background: #ce9178; }
 .element-badge[data-type="diagram"] { background: #d7ba7d; color: #1e1e1e; }
 .element-badge[data-type="text"] { background: #569cd6; }
+.element-badge[data-type="latex"] { background: #b5cea8; color: #1e1e1e; }
 
 .element-index {
   font-size: 10px;

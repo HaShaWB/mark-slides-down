@@ -80,6 +80,7 @@ export const ElementEditor: React.FC<ElementEditorProps> = ({
                 <option value="diagram">Diagram</option>
                 <option value="image">Image</option>
                 <option value="table">Table</option>
+                <option value="latex">LaTeX</option>
               </select>
             </div>
             {element.type === 'code' && (
@@ -164,11 +165,11 @@ export const ElementEditor: React.FC<ElementEditorProps> = ({
               />
             ) : (
               <textarea
-                className={`element-data ${element.type === 'code' ? 'code-textarea' : ''}`}
+                className={`element-data ${element.type === 'code' || element.type === 'latex' ? 'code-textarea' : ''}`}
                 value={element.data}
                 onChange={(e) => onChange({ ...element, data: e.target.value })}
                 placeholder={getPlaceholder(element.type)}
-                rows={element.type === 'code' ? 8 : 4}
+                rows={element.type === 'code' ? 8 : element.type === 'latex' ? 6 : 4}
               />
             )}
           </div>
@@ -186,6 +187,7 @@ function getDataLabel(type: ElementType): string {
     case 'diagram': return 'Diagram (Mermaid)';
     case 'image': return 'Image URL';
     case 'table': return 'Table';
+    case 'latex': return 'LaTeX (KaTeX)';
   }
 }
 
@@ -197,6 +199,7 @@ function getPlaceholder(type: ElementType): string {
     case 'diagram': return 'graph TD\n  A[Start] --> B[End]';
     case 'image': return 'https://example.com/image.png';
     case 'table': return '| Col1 | Col2 |\n|------|------|\n| A    | B    |';
+    case 'latex': return '\\int_0^1 x^2\\,dx = \\frac{1}{3}';
   }
 }
 

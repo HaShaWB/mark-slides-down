@@ -14,6 +14,7 @@ const ELEMENT_TYPES: { value: ElementType; label: string }[] = [
   { value: 'markdown', label: 'Markdown' },
   { value: 'text', label: 'Text' },
   { value: 'code', label: 'Code' },
+  { value: 'latex', label: 'LaTeX' },
   { value: 'image', label: 'Image' },
   { value: 'table', label: 'Table' },
   { value: 'diagram', label: 'Diagram' },

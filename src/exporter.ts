@@ -1,11 +1,13 @@
 import { Marked } from 'marked';
 import hljs from 'highlight.js/lib/common';
+import katex from 'katex';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { execFile } from 'child_process';
 import type { SlidesDocument, Slide, SlideElement, SlideDimensions, SlideStyle, LayoutStyle } from './types';
 import { getDocDimensions, getDocStyle } from './types';
+import { preprocessKatexInMarkdown } from './mathInMarkdown';
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -40,7 +42,7 @@ function preserveBlankLines(text: string): string {
 
 function renderMd(md: Marked, text: string): string {
   if (!text) return '';
-  const r = md.parse(preserveBlankLines(text));
+  const r = md.parse(preserveBlankLines(preprocessKatexInMarkdown(text)));
   return typeof r === 'string' ? r : '';
 }
 
@@ -87,6 +89,12 @@ function renderElement(
       break;
     case 'diagram':
       content = `<div class="mermaid-diagram" data-code="${escapeHtml(el.data)}"><pre style="color:#999;padding:1em;font-size:14px;">Loading diagram...</pre></div>`;
+      break;
+    case 'latex':
+      content = `<div class="latex-element">${katex.renderToString(el.data.trim() || '\\;', {
+        displayMode: true,
+        throwOnError: false,
+      })}</div>`;
       break;
     default:
       content = '';
@@ -174,6 +182,9 @@ body{min-height:100vh;}
 .code-block code{background:transparent;padding:0;font-size:inherit;}
 
 .mermaid-diagram svg{max-width:100%;height:auto;}
+.slide .katex-display{display:block;margin:0.5em 0;text-align:center;overflow-x:auto;}
+.latex-element{overflow-x:auto;text-align:center;}
+.latex-element .katex-display{margin:0;}
 
 ${getHljsCss()}
 
@@ -321,6 +332,7 @@ export function generateSlideshowHtml(doc: SlidesDocument): string {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>${escapeHtml(doc.metadata.title || 'Presentation')}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.45/dist/katex.min.css" crossorigin="anonymous">
 <style>
 ${getCss(dims, style)}
 </style>

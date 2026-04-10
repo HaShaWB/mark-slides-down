@@ -2,7 +2,9 @@ import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { Marked } from 'marked';
 import hljs from 'highlight.js/lib/common';
 import mermaid from 'mermaid';
+import katex from 'katex';
 import type { Slide, SlideElement, SlideDimensions, SlideStyle, LayoutStyle } from '../../types';
+import { preprocessKatexInMarkdown } from '../../mathInMarkdown';
 
 interface SlidePreviewProps {
   slide: Slide;
@@ -47,7 +49,8 @@ function preserveBlankLines(text: string): string {
 
 function renderMd(text: string): string {
   if (!text) return '';
-  const r = md.parse(preserveBlankLines(text));
+  // KaTeX before preserveBlankLines so multi-line TeX is not corrupted by &nbsp; spacers.
+  const r = md.parse(preserveBlankLines(preprocessKatexInMarkdown(text)));
   return typeof r === 'string' ? r : '';
 }
 
@@ -89,6 +92,12 @@ function renderElement(el: SlideElement, style: SlideStyle): string {
       break;
     case 'diagram':
       content = `<div class="mermaid-diagram" data-code="${escapeHtml(el.data)}"><pre style="color:#999;padding:1em;font-size:14px;">Loading diagram...</pre></div>`;
+      break;
+    case 'latex':
+      content = `<div class="latex-element">${katex.renderToString(el.data.trim() || '\\;', {
+        displayMode: true,
+        throwOnError: false,
+      })}</div>`;
       break;
     default:
       content = '';
@@ -158,6 +167,9 @@ function getSlideCss(style: SlideStyle): string {
 .code-block{background:#0d1117;border-radius:5px;padding:0.8em;font-family:${style.codeFontFamily};font-size:${style.codeFontSize}px;overflow:auto;margin:0;}
 .code-block code{background:transparent;padding:0;font-size:inherit;}
 .mermaid-diagram svg{max-width:100%;height:auto;}
+.slide .katex-display{display:block;margin:0.5em 0;text-align:center;overflow-x:auto;}
+.latex-element{overflow-x:auto;text-align:center;}
+.latex-element .katex-display{margin:0;}
 pre code.hljs{display:block;overflow-x:auto;padding:1em}
 code.hljs{padding:3px 5px}
 .hljs{color:#c9d1d9;background:#0d1117}

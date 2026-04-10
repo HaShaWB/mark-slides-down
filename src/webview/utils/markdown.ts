@@ -1,6 +1,7 @@
 import { Marked } from 'marked';
 import hljs from 'highlight.js/lib/common';
 import 'highlight.js/styles/github-dark.css';
+import { preprocessKatexInMarkdown } from '../../mathInMarkdown';
 
 const marked = new Marked({
   gfm: true,
@@ -40,7 +41,8 @@ function preserveBlankLines(text: string): string {
 export function renderMarkdown(text: string): string {
   if (!text) return '';
   try {
-    const result = marked.parse(preserveBlankLines(text));
+    // KaTeX first: preserveBlankLines must not inject &nbsp; into $$…$$ / \[…\] (LaTeX uses newlines).
+    const result = marked.parse(preserveBlankLines(preprocessKatexInMarkdown(text)));
     if (typeof result === 'string') return result;
     return '';
   } catch {

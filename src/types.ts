@@ -1,4 +1,4 @@
-export type ElementType = 'text' | 'markdown' | 'code' | 'diagram' | 'image' | 'table';
+export type ElementType = 'text' | 'markdown' | 'code' | 'diagram' | 'image' | 'table' | 'latex';
 
 export interface SlideDimensions {
   width: number;
@@ -168,6 +168,7 @@ export function createDefaultElement(type: ElementType = 'markdown', _dims?: Sli
     diagram:  { data: 'graph TD\n  A-->B' },
     image:    { data: '', meta: { alt: '' } },
     table:    { data: '| Header | Header |\n|--------|--------|\n| Cell   | Cell   |' },
+    latex:    { data: 'e^{i\\pi} + 1 = 0' },
   };
   const d = defaults[type];
   return {
