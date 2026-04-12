@@ -7,7 +7,7 @@ import * as os from 'os';
 import { execFile } from 'child_process';
 import type { SlidesDocument, Slide, SlideElement, SlideDimensions, SlideStyle, LayoutStyle } from './types';
 import { getDocDimensions, getDocStyle } from './types';
-import { preprocessKatexInMarkdown } from './mathInMarkdown';
+import { preprocessKatexInMarkdown, preserveMultipleSpaces } from './mathInMarkdown';
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -42,7 +42,8 @@ function preserveBlankLines(text: string): string {
 
 function renderMd(md: Marked, text: string): string {
   if (!text) return '';
-  const r = md.parse(preserveBlankLines(preprocessKatexInMarkdown(text)));
+  // 파이프라인: 연속 스페이스 보존 → KaTeX → 빈 줄 보존 → 마크다운 파싱
+  const r = md.parse(preserveBlankLines(preprocessKatexInMarkdown(preserveMultipleSpaces(text))));
   return typeof r === 'string' ? r : '';
 }
 
@@ -165,6 +166,8 @@ body{min-height:100vh;}
 
 .slide ul,.slide ol{padding-left:1.5em;margin:0.4em 0;}
 .slide li{margin:0.2em 0;}
+/* cover 슬라이드: 리스트 블럭은 가운데, 내부 항목은 왼쪽 정렬 */
+.slide.cover ul,.slide.cover ol{display:inline-block;text-align:left;}
 .slide p{margin:0.3em 0;}
 .slide a{color:#007acc;text-decoration:none;}
 .slide strong{font-weight:700;}

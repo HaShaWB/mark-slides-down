@@ -43,7 +43,7 @@
     {
       "type": "cover",
       "title": "Mark Slide Down",
-      "content": "Markdown 기반 슬라이드 VS Code Extension",
+      "content": "Markdown 기반 슬라이드 VS Code Extension\n\n1. 323\n2. 231\n3. 2\n\n$$ 2        3 $$",
       "elements": []
     },
     {
@@ -55,7 +55,7 @@
     {
       "type": "body",
       "title": "코드 하이라이팅",
-      "content": "TypeScript와 다양한 언어를 지원합니다.\n\n```python\nprint(\"1\")\n```",
+      "content": "TypeScript와 다양한 언어를 지원합니다.\n\n```python\nprint(\"1\") \n```\n\n1. 일\n2. 이\n3. 사",
       "elements": [
         {
           "type": "latex",

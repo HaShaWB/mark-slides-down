@@ -4,7 +4,7 @@ import hljs from 'highlight.js/lib/common';
 import mermaid from 'mermaid';
 import katex from 'katex';
 import type { Slide, SlideElement, SlideDimensions, SlideStyle, LayoutStyle } from '../../types';
-import { preprocessKatexInMarkdown } from '../../mathInMarkdown';
+import { preprocessKatexInMarkdown, preserveMultipleSpaces } from '../../mathInMarkdown';
 
 interface SlidePreviewProps {
   slide: Slide;
@@ -49,8 +49,8 @@ function preserveBlankLines(text: string): string {
 
 function renderMd(text: string): string {
   if (!text) return '';
-  // KaTeX before preserveBlankLines so multi-line TeX is not corrupted by &nbsp; spacers.
-  const r = md.parse(preserveBlankLines(preprocessKatexInMarkdown(text)));
+  // 파이프라인: 연속 스페이스 보존 → KaTeX → 빈 줄 보존 → 마크다운 파싱
+  const r = md.parse(preserveBlankLines(preprocessKatexInMarkdown(preserveMultipleSpaces(text))));
   return typeof r === 'string' ? r : '';
 }
 
@@ -152,6 +152,8 @@ function getSlideCss(style: SlideStyle): string {
 .slide-title h1,.slide-title h2,.slide-title h3,.slide-title h4{font-size:inherit;margin:0;}
 .slide ul,.slide ol{padding-left:1.5em;margin:0.4em 0;}
 .slide li{margin:0.2em 0;}
+/* cover 슬라이드: 리스트 블럭은 가운데, 내부 항목은 왼쪽 정렬 */
+.slide.cover ul,.slide.cover ol{display:inline-block;text-align:left;}
 .slide p{margin:0.3em 0;}
 .slide a{color:#007acc;text-decoration:none;}
 .slide strong{font-weight:700;}

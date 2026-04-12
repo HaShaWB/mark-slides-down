@@ -8,6 +8,29 @@ import katex from 'katex';
 const PROTECTED_MARKDOWN =
   /(```[\s\S]*?```|`[^`\n]*`)/g;
 
+/**
+ * 코드블록·인라인코드·KaTeX 등 보호 영역을 제외하고,
+ * 연속된 스페이스(2개 이상)를 &nbsp;로 변환하여
+ * HTML의 공백 압축(whitespace collapsing)을 우회한다.
+ * 예: "a   b" → "a &nbsp;&nbsp;b"
+ *
+ * 보호 영역: 펜스 코드블록, 인라인 코드, $$...$$ / \[...\] / \(...\) / $...$
+ */
+const PROTECTED_FOR_SPACES =
+  /(```[\s\S]*?```|`[^`\n]*`|\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|(?<![$\\])\$(?!\$)(?:\\.|[^$\n])+?\$(?!\$))/g;
+
+export function preserveMultipleSpaces(text: string): string {
+  const parts = text.split(PROTECTED_FOR_SPACES);
+  return parts
+    .map((part, i) => (i % 2 === 1 ? part : collapseSpaces(part)))
+    .join('');
+}
+
+function collapseSpaces(segment: string): string {
+  // 2개 이상 연속 스페이스: 첫 스페이스는 일반, 나머지는 &nbsp; 로 치환
+  return segment.replace(/ {2,}/g, (match) => ' ' + '&nbsp;'.repeat(match.length - 1));
+}
+
 export function preprocessKatexInMarkdown(text: string): string {
   const parts = text.split(PROTECTED_MARKDOWN);
   return parts
