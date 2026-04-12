@@ -782,6 +782,26 @@ body {
   flex-shrink: 0;
 }
 
+/* ============ Markdown Editor (CodeMirror) ============ */
+.markdown-editor-wrapper {
+  width: 100%;
+}
+
+/* CodeMirror placeholder 표시 (data-placeholder 어트리뷰트 활용) */
+.markdown-editor-wrapper .cm-content[data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--vscode-input-placeholderForeground, #6e6e6e);
+  font-style: italic;
+  pointer-events: none;
+  float: left; /* placeholder가 실제 커서 위치에 영향 주지 않도록 */
+}
+
+/* element-field 내부에서 폭 100% 보장 */
+.element-field .markdown-editor-wrapper,
+.editor-field .markdown-editor-wrapper {
+  width: 100%;
+}
+
 /* ============ Scrollbar ============ */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg-primary); }

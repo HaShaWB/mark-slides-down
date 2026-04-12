@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { SlideElement, ElementType, SlideDimensions } from '../../types';
 import { TableEditorGui } from './TableEditorGui';
+import { MarkdownEditor } from './MarkdownEditor';
 
 interface ElementEditorProps {
   element: SlideElement;
@@ -163,13 +164,24 @@ export const ElementEditor: React.FC<ElementEditorProps> = ({
                 onChange={(e) => onChange({ ...element, data: e.target.value })}
                 placeholder="Image URL or path..."
               />
-            ) : (
-              <textarea
-                className={`element-data ${element.type === 'code' || element.type === 'latex' ? 'code-textarea' : ''}`}
+            ) : element.type === 'markdown' || element.type === 'text' ? (
+              // 마크다운/텍스트: 풀 마크다운 편집 지원
+              <MarkdownEditor
                 value={element.data}
-                onChange={(e) => onChange({ ...element, data: e.target.value })}
+                onChange={(val) => onChange({ ...element, data: val })}
+                placeholder={getPlaceholder(element.type)}
+                rows={element.type === 'markdown' ? 6 : 4}
+                enableMarkdown={element.type === 'markdown'}
+              />
+            ) : (
+              // 코드/다이어그램/LaTeX: Tab 들여쓰기만 지원 (마크다운 하이라이팅 없음)
+              <MarkdownEditor
+                value={element.data}
+                onChange={(val) => onChange({ ...element, data: val })}
                 placeholder={getPlaceholder(element.type)}
                 rows={element.type === 'code' ? 8 : element.type === 'latex' ? 6 : 4}
+                className={element.type === 'code' || element.type === 'latex' ? 'code-textarea' : ''}
+                enableMarkdown={false}
               />
             )}
           </div>

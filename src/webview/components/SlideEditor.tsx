@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import type { Slide, SlideElement, ElementType, SlideDimensions } from '../../types';
 import { createDefaultElement } from '../../types';
 import { ElementEditor } from './ElementEditor';
+import { MarkdownEditor } from './MarkdownEditor';
 
 interface SlideEditorProps {
   slide: Slide;
@@ -96,9 +97,9 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({ slide, dims, onChange 
 
         <div className="editor-field">
           <label>Content (Markdown)</label>
-          <textarea
+          <MarkdownEditor
             value={slide.content}
-            onChange={(e) => updateField('content', e.target.value)}
+            onChange={(val) => updateField('content', val)}
             placeholder="Slide content in Markdown..."
             rows={8}
           />
