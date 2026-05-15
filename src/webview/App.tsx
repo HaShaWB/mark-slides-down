@@ -65,6 +65,27 @@ export const App: React.FC = () => {
     };
   }, [sidebarW]);
 
+  const resizeByKeyboard = useCallback((target: 'sidebar' | 'editor', e: React.KeyboardEvent) => {
+    const STEP = e.shiftKey ? 48 : 16;
+    let delta = 0;
+    if (e.key === 'ArrowLeft') delta = -STEP;
+    else if (e.key === 'ArrowRight') delta = STEP;
+    else if (e.key === 'Home') delta = -10000;
+    else if (e.key === 'End') delta = 10000;
+    else return;
+    e.preventDefault();
+    if (target === 'sidebar') {
+      setSidebarW((w) => Math.max(80, Math.min(350, w + delta)));
+    } else {
+      const total = mainRef.current?.clientWidth ?? 1200;
+      const maxW = total - sidebarW - 200 - 12;
+      setEditorW((w) => {
+        const base = w ?? (total - sidebarW - 12) / 2;
+        return Math.max(200, Math.min(maxW, base + delta));
+      });
+    }
+  }, [sidebarW]);
+
   const startResize = useCallback((target: 'sidebar' | 'editor', e: React.MouseEvent) => {
     e.preventDefault();
     let startW: number;
@@ -154,7 +175,11 @@ export const App: React.FC = () => {
   }, []);
 
   if (!doc) {
-    return <div className="loading">Loading...</div>;
+    return (
+      <div className="loading" role="status" aria-live="polite">
+        Loading...
+      </div>
+    );
   }
 
   const dims = getDocDimensions(doc);
@@ -167,6 +192,9 @@ export const App: React.FC = () => {
 
   return (
     <div className="app">
+      <a className="skip-link" href="#editor-main">
+        본문 편집기로 건너뛰기
+      </a>
       <Toolbar
         slideCount={doc.slides.length}
         currentIndex={currentSlideIndex}
@@ -180,25 +208,48 @@ export const App: React.FC = () => {
         onExportPdf={exportPdf}
       />
       <div className="main-content" ref={mainRef}>
-        <div className="slide-list" style={{ width: sidebarW }}>
+        <nav
+          className="slide-list"
+          style={{ width: sidebarW }}
+          aria-label="문서 설정 및 슬라이드 목록"
+        >
           <MetadataEditor metadata={doc.metadata} onChange={updateMetadata} />
-          {doc.slides.map((slide, index) => (
-            <div
-              key={index}
-              className={`slide-thumbnail ${index === currentSlideIndex ? 'active' : ''}`}
-              onClick={() => setCurrentSlideIndex(index)}
-            >
-              <div className="slide-thumbnail-number">{index + 1}</div>
-              <div className="slide-thumbnail-preview">
-                <div className={`mini-slide ${slide.type}`}>
-                  <div className="mini-title">{slide.title || '(No Title)'}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="resize-handle" onMouseDown={e => startResize('sidebar', e)} />
-        <div className="pane-editor" style={editorStyle}>
+          <ul className="slide-thumb-list" aria-label={`슬라이드 ${doc.slides.length}개`}>
+            {doc.slides.map((slide, index) => (
+              <li key={index}>
+                <button
+                  type="button"
+                  className={`slide-thumbnail ${index === currentSlideIndex ? 'active' : ''}`}
+                  aria-current={index === currentSlideIndex ? 'true' : undefined}
+                  aria-label={`슬라이드 ${index + 1}, ${slide.type === 'cover' ? '표지' : '본문'}: ${slide.title || '제목 없음'}`}
+                  onClick={() => setCurrentSlideIndex(index)}
+                >
+                  <span className="slide-thumbnail-number" aria-hidden="true">
+                    {index + 1}
+                  </span>
+                  <span className="slide-thumbnail-preview" aria-hidden="true">
+                    <span className={`mini-slide ${slide.type}`}>
+                      <span className="mini-title">{slide.title || '(No Title)'}</span>
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <div
+          className="resize-handle"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="사이드바 너비 조절"
+          aria-valuenow={Math.round(sidebarW)}
+          aria-valuemin={80}
+          aria-valuemax={350}
+          tabIndex={0}
+          onMouseDown={e => startResize('sidebar', e)}
+          onKeyDown={e => resizeByKeyboard('sidebar', e)}
+        />
+        <main className="pane-editor" id="editor-main" style={editorStyle} aria-label="슬라이드 편집기">
           <StyleEditor metadata={doc.metadata} onChange={updateMetadata} />
           <SlideEditor
             slide={currentSlide}
@@ -206,11 +257,20 @@ export const App: React.FC = () => {
             dims={dims}
             onChange={(slide) => updateSlide(currentSlideIndex, slide)}
           />
-        </div>
-        <div className="resize-handle" onMouseDown={e => startResize('editor', e)} />
-        <div className="pane-preview">
+        </main>
+        <div
+          className="resize-handle"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="편집기 너비 조절"
+          aria-valuemin={200}
+          tabIndex={0}
+          onMouseDown={e => startResize('editor', e)}
+          onKeyDown={e => resizeByKeyboard('editor', e)}
+        />
+        <section className="pane-preview" aria-label="슬라이드 미리보기">
           <SlidePreview slide={currentSlide} dims={dims} style={style} />
-        </div>
+        </section>
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import type { SlideElement, ElementType, SlideDimensions } from '../../types';
 import { TableEditorGui } from './TableEditorGui';
 import { MarkdownEditor } from './MarkdownEditor';
+import { Field } from './a11y';
 
 interface ElementEditorProps {
   element: SlideElement;
@@ -33,6 +34,8 @@ export const ElementEditor: React.FC<ElementEditorProps> = ({
   onMoveDown,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const panelId = useId();
+  const label = `${element.type} 요소 #${index + 1}`;
 
   const updateMeta = (key: string, value: string) => {
     onChange({ ...element, meta: { ...element.meta, [key]: value } });
@@ -40,35 +43,41 @@ export const ElementEditor: React.FC<ElementEditorProps> = ({
 
   return (
     <div className={`element-editor ${collapsed ? 'collapsed' : ''}`}>
-      <div className="element-header" onClick={() => setCollapsed(!collapsed)}>
-        <div className="element-header-left">
-          <span className="collapse-icon">{collapsed ? '▶' : '▼'}</span>
+      <div className="element-header">
+        <button
+          type="button"
+          className="disclosure-btn element-header-left"
+          aria-expanded={!collapsed}
+          aria-controls={panelId}
+          aria-label={`${label} ${collapsed ? '펼치기' : '접기'}`}
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          <span className="collapse-icon" aria-hidden="true">{collapsed ? '▶' : '▼'}</span>
           <span className="element-badge" data-type={element.type}>
             {element.type}
           </span>
           <span className="element-index">#{index + 1}</span>
-        </div>
-        <div className="element-header-right" onClick={(e) => e.stopPropagation()}>
-          <button className="icon-btn" onClick={onMoveUp} disabled={index === 0} title="Move Up">
-            ▲
+        </button>
+        <div className="element-header-right" role="group" aria-label={`${label} 동작`}>
+          <button className="icon-btn" onClick={onMoveUp} disabled={index === 0} title="Move Up" aria-label={`${label} 위로 이동`}>
+            <span aria-hidden="true">▲</span>
           </button>
-          <button className="icon-btn" onClick={onMoveDown} disabled={index >= total - 1} title="Move Down">
-            ▼
+          <button className="icon-btn" onClick={onMoveDown} disabled={index >= total - 1} title="Move Down" aria-label={`${label} 아래로 이동`}>
+            <span aria-hidden="true">▼</span>
           </button>
-          <button className="icon-btn" onClick={onDuplicate} title="Duplicate">
-            ⧉
+          <button className="icon-btn" onClick={onDuplicate} title="Duplicate" aria-label={`${label} 복제`}>
+            <span aria-hidden="true">⧉</span>
           </button>
-          <button className="icon-btn danger" onClick={onDelete} title="Delete">
-            ×
+          <button className="icon-btn danger" onClick={onDelete} title="Delete" aria-label={`${label} 삭제`}>
+            <span aria-hidden="true">×</span>
           </button>
         </div>
       </div>
 
       {!collapsed && (
-        <div className="element-body">
+        <div className="element-body" id={panelId}>
           <div className="element-row">
-            <div className="element-field narrow">
-              <label>Type</label>
+            <Field label="Type" className="element-field narrow">
               <select
                 value={element.type}
                 onChange={(e) =>
@@ -83,10 +92,9 @@ export const ElementEditor: React.FC<ElementEditorProps> = ({
                 <option value="table">Table</option>
                 <option value="latex">LaTeX</option>
               </select>
-            </div>
+            </Field>
             {element.type === 'code' && (
-              <div className="element-field narrow">
-                <label>Language</label>
+              <Field label="Language" className="element-field narrow">
                 <select
                   value={element.meta?.language || 'typescript'}
                   onChange={(e) => updateMeta('language', e.target.value)}
@@ -95,24 +103,22 @@ export const ElementEditor: React.FC<ElementEditorProps> = ({
                     <option key={l} value={l}>{l}</option>
                   ))}
                 </select>
-              </div>
+              </Field>
             )}
             {element.type === 'image' && (
-              <div className="element-field">
-                <label>Alt Text</label>
+              <Field label="Alt Text" className="element-field">
                 <input
                   type="text"
                   value={element.meta?.alt || ''}
                   onChange={(e) => updateMeta('alt', e.target.value)}
                   placeholder="Image description..."
                 />
-              </div>
+              </Field>
             )}
           </div>
 
           <div className="element-row">
-            <div className="element-field quad">
-              <label>X (px)</label>
+            <Field label="X (px)" className="element-field quad">
               <input
                 type="number" min={0} max={dims.width}
                 value={element.pos[0]}
@@ -120,9 +126,8 @@ export const ElementEditor: React.FC<ElementEditorProps> = ({
                   onChange({ ...element, pos: [parseInt(e.target.value) || 0, element.pos[1]] })
                 }
               />
-            </div>
-            <div className="element-field quad">
-              <label>Y (px)</label>
+            </Field>
+            <Field label="Y (px)" className="element-field quad">
               <input
                 type="number" min={0} max={dims.height}
                 value={element.pos[1]}
@@ -130,9 +135,8 @@ export const ElementEditor: React.FC<ElementEditorProps> = ({
                   onChange({ ...element, pos: [element.pos[0], parseInt(e.target.value) || 0] })
                 }
               />
-            </div>
-            <div className="element-field quad">
-              <label>Scale</label>
+            </Field>
+            <Field label="Scale" className="element-field quad">
               <input
                 type="number" min={0.1} max={5} step={0.1}
                 value={element.scale ?? 1}
@@ -140,49 +144,63 @@ export const ElementEditor: React.FC<ElementEditorProps> = ({
                   onChange({ ...element, scale: parseFloat(e.target.value) || 1 })
                 }
               />
-            </div>
+            </Field>
           </div>
           <div className="element-size-hint">
             Slide: {dims.width}×{dims.height}px · Scale: {((element.scale ?? 1) * 100).toFixed(0)}%
           </div>
 
           <div className="element-field">
-            <label>{getDataLabel(element.type)}</label>
             {element.type === 'table' ? (
-              <TableEditorGui
-                data={element.data}
-                onChange={(newData) => onChange({ ...element, data: newData })}
-                colWidths={parseColWidths(element.meta?.colWidths)}
-                onColWidthsChange={(widths) =>
-                  onChange({ ...element, meta: { ...element.meta, colWidths: widths.map(Math.round).join(',') } })
-                }
-              />
+              <>
+                <label id={`${panelId}-data-lbl`}>{getDataLabel(element.type)}</label>
+                <div role="group" aria-labelledby={`${panelId}-data-lbl`}>
+                  <TableEditorGui
+                    data={element.data}
+                    onChange={(newData) => onChange({ ...element, data: newData })}
+                    colWidths={parseColWidths(element.meta?.colWidths)}
+                    onColWidthsChange={(widths) =>
+                      onChange({ ...element, meta: { ...element.meta, colWidths: widths.map(Math.round).join(',') } })
+                    }
+                  />
+                </div>
+              </>
             ) : element.type === 'image' ? (
-              <input
-                type="text"
-                value={element.data}
-                onChange={(e) => onChange({ ...element, data: e.target.value })}
-                placeholder="Image URL or path..."
-              />
+              <>
+                <label htmlFor={`${panelId}-data`}>{getDataLabel(element.type)}</label>
+                <input
+                  id={`${panelId}-data`}
+                  type="text"
+                  value={element.data}
+                  onChange={(e) => onChange({ ...element, data: e.target.value })}
+                  placeholder="Image URL or path..."
+                />
+              </>
             ) : element.type === 'markdown' || element.type === 'text' ? (
-              // 마크다운/텍스트: 풀 마크다운 편집 지원
-              <MarkdownEditor
-                value={element.data}
-                onChange={(val) => onChange({ ...element, data: val })}
-                placeholder={getPlaceholder(element.type)}
-                rows={element.type === 'markdown' ? 6 : 4}
-                enableMarkdown={element.type === 'markdown'}
-              />
+              <>
+                <label htmlFor={`${panelId}-data`}>{getDataLabel(element.type)}</label>
+                <MarkdownEditor
+                  value={element.data}
+                  onChange={(val) => onChange({ ...element, data: val })}
+                  placeholder={getPlaceholder(element.type)}
+                  rows={element.type === 'markdown' ? 6 : 4}
+                  enableMarkdown={element.type === 'markdown'}
+                  ariaLabel={getDataLabel(element.type)}
+                />
+              </>
             ) : (
-              // 코드/다이어그램/LaTeX: Tab 들여쓰기만 지원 (마크다운 하이라이팅 없음)
-              <MarkdownEditor
-                value={element.data}
-                onChange={(val) => onChange({ ...element, data: val })}
-                placeholder={getPlaceholder(element.type)}
-                rows={element.type === 'code' ? 8 : element.type === 'latex' ? 6 : 4}
-                className={element.type === 'code' || element.type === 'latex' ? 'code-textarea' : ''}
-                enableMarkdown={false}
-              />
+              <>
+                <label htmlFor={`${panelId}-data`}>{getDataLabel(element.type)}</label>
+                <MarkdownEditor
+                  value={element.data}
+                  onChange={(val) => onChange({ ...element, data: val })}
+                  placeholder={getPlaceholder(element.type)}
+                  rows={element.type === 'code' ? 8 : element.type === 'latex' ? 6 : 4}
+                  className={element.type === 'code' || element.type === 'latex' ? 'code-textarea' : ''}
+                  enableMarkdown={false}
+                  ariaLabel={getDataLabel(element.type)}
+                />
+              </>
             )}
           </div>
         </div>

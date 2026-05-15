@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { SlideMetadata } from '../../types';
 import { DIMENSION_PRESETS } from '../../types';
 import { THEME_PRESETS } from '../../themes';
+import { Field, Disclosure } from './a11y';
 
 interface MetadataEditorProps {
   metadata: SlideMetadata;
@@ -25,33 +26,36 @@ export const MetadataEditor: React.FC<MetadataEditorProps> = ({ metadata, onChan
 
   return (
     <div className="metadata-editor">
-      <div className="metadata-header" onClick={() => setOpen(!open)}>
-        <span className="collapse-icon">{open ? '▼' : '▶'}</span>
+      <Disclosure
+        open={open}
+        onToggle={() => setOpen(!open)}
+        className="metadata-header"
+        panelId="metadata-body"
+        ariaLabel={`설정 ${open ? '접기' : '펼치기'} (현재 ${metadata.width}×${metadata.height})`}
+      >
+        <span className="collapse-icon" aria-hidden="true">{open ? '▼' : '▶'}</span>
         <span className="metadata-title">Settings</span>
         <span className="metadata-summary">
           {metadata.width}×{metadata.height}
         </span>
-      </div>
+      </Disclosure>
       {open && (
-        <div className="metadata-body">
-          <div className="editor-field">
-            <label>Title</label>
+        <div className="metadata-body" id="metadata-body">
+          <Field label="Title">
             <input
               type="text"
               value={metadata.title}
               onChange={(e) => onChange({ ...metadata, title: e.target.value })}
             />
-          </div>
-          <div className="editor-field">
-            <label>Author</label>
+          </Field>
+          <Field label="Author">
             <input
               type="text"
               value={metadata.author}
               onChange={(e) => onChange({ ...metadata, author: e.target.value })}
             />
-          </div>
-          <div className="editor-field">
-            <label>Theme</label>
+          </Field>
+          <Field label="Theme">
             <select
               value={THEME_PRESETS.some(t => t.id === metadata.theme) ? metadata.theme : '__custom'}
               onChange={(e) => {
@@ -68,12 +72,11 @@ export const MetadataEditor: React.FC<MetadataEditorProps> = ({ metadata, onChan
                 <option value="__custom" disabled>Custom</option>
               )}
             </select>
-          </div>
+          </Field>
 
-          <div className="metadata-divider" />
+          <div className="metadata-divider" role="presentation" />
 
-          <div className="editor-field">
-            <label>Slide Size</label>
+          <Field label="Slide Size">
             <select
               value={currentPreset ? String(DIMENSION_PRESETS.indexOf(currentPreset)) : 'custom'}
               onChange={(e) => handlePresetChange(e.target.value)}
@@ -83,24 +86,22 @@ export const MetadataEditor: React.FC<MetadataEditorProps> = ({ metadata, onChan
               ))}
               {!currentPreset && <option value="custom">Custom ({metadata.width}×{metadata.height})</option>}
             </select>
-          </div>
+          </Field>
           <div className="element-row">
-            <div className="element-field" style={{ flex: 1 }}>
-              <label>Width (px)</label>
+            <Field label="Width (px)" className="element-field" style={{ flex: 1 }}>
               <input
                 type="number" min={320} max={7680}
                 value={metadata.width}
                 onChange={(e) => onChange({ ...metadata, width: parseInt(e.target.value) || 1920 })}
               />
-            </div>
-            <div className="element-field" style={{ flex: 1 }}>
-              <label>Height (px)</label>
+            </Field>
+            <Field label="Height (px)" className="element-field" style={{ flex: 1 }}>
               <input
                 type="number" min={240} max={4320}
                 value={metadata.height}
                 onChange={(e) => onChange({ ...metadata, height: parseInt(e.target.value) || 1080 })}
               />
-            </div>
+            </Field>
           </div>
         </div>
       )}

@@ -12,6 +12,8 @@ interface MarkdownEditorProps {
   className?: string;
   /** 마크다운 문법 하이라이팅 활성화 여부 (기본값 true) */
   enableMarkdown?: boolean;
+  /** 스크린리더용 접근 이름 (CodeMirror 편집 영역에 aria-label로 연결) */
+  ariaLabel?: string;
 }
 
 // 재번호 매기기 트랜잭션임을 표시 (무한 루프 방지용)
@@ -200,6 +202,7 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   rows = 4,
   className = '',
   enableMarkdown = true,
+  ariaLabel,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -223,9 +226,11 @@ export const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
         ...defaultKeymap,
       ]),
       EditorView.lineWrapping,
-      ...(placeholder
-        ? [EditorView.contentAttributes.of({ 'data-placeholder': placeholder })]
-        : []),
+      EditorView.contentAttributes.of({
+        ...(placeholder ? { 'data-placeholder': placeholder } : {}),
+        ...(ariaLabel ? { 'aria-label': ariaLabel } : {}),
+        'aria-multiline': 'true',
+      }),
 
       // 변경 감지 → 재번호 매기기 → React 상태 동기화
       EditorView.updateListener.of((update) => {

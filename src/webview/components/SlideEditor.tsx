@@ -3,6 +3,7 @@ import type { Slide, SlideElement, ElementType, SlideDimensions } from '../../ty
 import { createDefaultElement } from '../../types';
 import { ElementEditor } from './ElementEditor';
 import { MarkdownEditor } from './MarkdownEditor';
+import { Field } from './a11y';
 
 interface SlideEditorProps {
   slide: Slide;
@@ -73,9 +74,8 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({ slide, dims, onChange 
 
   return (
     <div className="slide-editor">
-      <div className="editor-section">
-        <div className="editor-field">
-          <label>Type</label>
+      <section className="editor-section" aria-label="슬라이드 기본 속성">
+        <Field label="Type">
           <select
             value={slide.type}
             onChange={(e) => updateField('type', e.target.value as 'cover' | 'body')}
@@ -83,39 +83,40 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({ slide, dims, onChange 
             <option value="cover">Cover</option>
             <option value="body">Body</option>
           </select>
-        </div>
+        </Field>
 
-        <div className="editor-field">
-          <label>Title (Markdown)</label>
+        <Field label="Title (Markdown)">
           <input
             type="text"
             value={slide.title}
             onChange={(e) => updateField('title', e.target.value)}
             placeholder="Slide title..."
           />
-        </div>
+        </Field>
 
         <div className="editor-field">
-          <label>Content (Markdown)</label>
+          <label htmlFor="slide-content-editor">Content (Markdown)</label>
           <MarkdownEditor
             value={slide.content}
             onChange={(val) => updateField('content', val)}
             placeholder="Slide content in Markdown..."
             rows={8}
+            ariaLabel="슬라이드 본문 (마크다운)"
           />
         </div>
-      </div>
+      </section>
 
-      <div className="editor-section">
+      <section className="editor-section" aria-label={`요소 ${slide.elements.length}개`}>
         <div className="section-header">
           <h3>Elements ({slide.elements.length})</h3>
-          <div className="add-element-group">
+          <div className="add-element-group" role="group" aria-label="요소 추가">
             {ELEMENT_TYPES.map((t) => (
               <button
                 key={t.value}
                 className="toolbar-btn small"
                 onClick={() => addElement(t.value)}
                 title={`Add ${t.label}`}
+                aria-label={`${t.label} 요소 추가`}
               >
                 + {t.label}
               </button>
@@ -139,7 +140,7 @@ export const SlideEditor: React.FC<SlideEditorProps> = ({ slide, dims, onChange 
         {slide.elements.length === 0 && (
           <div className="empty-state">No elements yet. Add one above.</div>
         )}
-      </div>
+      </section>
     </div>
   );
 };

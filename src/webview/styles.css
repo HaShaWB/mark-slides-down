@@ -810,3 +810,114 @@ body {
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+/* ============ Accessibility ============ */
+
+/* 스크린리더 전용 (시각적으로 숨기되 보조기술에는 노출) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 본문으로 건너뛰기 링크 — 포커스 시에만 표시 */
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -48px;
+  z-index: 100;
+  padding: 8px 12px;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border-radius: 4px;
+  text-decoration: none;
+  transition: top 0.15s;
+}
+.skip-link:focus {
+  top: 8px;
+}
+
+/* 키보드 포커스 표시 — 마우스 클릭에는 나타나지 않음(:focus-visible) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible,
+.editor-field input:focus-visible,
+.editor-field textarea:focus-visible,
+.editor-field select:focus-visible,
+.element-field input:focus-visible,
+.element-field select:focus-visible,
+.element-data:focus-visible,
+.disclosure-btn:focus-visible,
+.slide-thumbnail:focus-visible,
+.toolbar-btn:focus-visible,
+.icon-btn:focus-visible,
+.resize-handle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-color: var(--accent);
+}
+
+/* 접기/펼치기 토글: <button> 기본 스타일 초기화, 기존 헤더 레이아웃 유지 */
+.disclosure-btn {
+  appearance: none;
+  border: 0;
+  margin: 0;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.element-header { cursor: default; }
+/* 요소 헤더: 토글 버튼은 남은 공간만 차지하고 우측 동작 버튼 영역 보존 */
+.element-header .disclosure-btn.element-header-left {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+}
+
+/* 슬라이드 목록: <ul>/<li>/<button> 시맨틱화에 따른 리스트 리셋 */
+.slide-thumb-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+button.slide-thumbnail {
+  appearance: none;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+}
+
+/* 동작 줄임 설정 사용자: 전환 효과 제거 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 고대비 모드: 포커스/경계 가시성 강화 */
+@media (forced-colors: active) {
+  .toolbar-btn,
+  .icon-btn,
+  .slide-thumbnail,
+  .disclosure-btn {
+    border: 1px solid ButtonText;
+  }
+  *:focus-visible {
+    outline: 2px solid Highlight;
+  }
+}
